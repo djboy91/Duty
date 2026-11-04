@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Duty Tracker Portal</title>
+    <style>
+        :root {
+            --primary: #4338ca;
+            --primary-hover: #3730a3;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 24px;
+            margin-top: 20px;
+        }
+
+        h2, h3, h4 {
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 16px;
+            margin-bottom: 20px;
+        }
+
+        .clock {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: 6px;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-danger { background-color: var(--danger); }
+        .btn-danger:hover { background-color: #dc2626; }
+
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: #16a34a; }
+
+        .btn-secondary { background-color: var(--text-muted); }
+        .btn-secondary:hover { background-color: #475569; }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            margin-top: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 25px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .badge-active { background-color: #dcfce7; color: #166534; }
+        .badge-out { background-color: #fee2e2; color: #991b1b; }
+
+        .error-msg {
+            color: var(--danger);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .success-msg {
+            color: var(--success);
+            font-size: 0.85rem;
+            margin-top: 5px;
+        }
+
+        .login-box {
+            max-width: 450px;
+            margin: 0 auto;
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- TOP BAR / CLOCK & DATE -->
+        <div class="header-flex">
+            <h2>Duty Tracker Portal</h2>
+            <div id="liveClock" class="clock">--:--:-- | --/--/----</div>
+        </div>
+
+        <!-- 1. UNIFIED LOGIN VIEW -->
+        <div id="loginView" class="view active">
+            <div class="login-box">
+                <h3>Portal Login</h3>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label for="loginInput">Enter Username, User ID, or Admin Password</label>
+                    <input type="text" id="loginInput" autocomplete="off" placeholder="">
+                </div>
+                <div id="loginError" class="error-msg"></div>
+                <div style="margin-top: 20px;">
+                    <button class="btn btn-success" style="width: 100%;" onclick="handleLogin()">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. USER DASHBOARD -->
+        <div id="userDashboard" class="view">
+            <div class="header-flex">
+                <h3>Welcome, <span id="currentUserName">User</span> (ID: <span id="currentUserId">----</span>)</h3>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px;">
+                <h4>Duty Status Control</h4>
+                <p id="dutyStatusText" style="margin: 10px 0; font-weight: 500;">Status: Not Punched In</p>
+                <div class="btn-group">
+                    <button class="btn btn-success" id="punchInBtn" onclick="punchIn()">Punch In</button>
+                    <button class="btn btn-danger" id="punchOutBtn" onclick="punchOut()" disabled>Punch Out</button>
+                </div>
+            </div>
+
+            <h3>My Duty History</h3>
+            <button class="btn btn-secondary" onclick="copyTableData('userHistoryTable')" style="margin-bottom: 10px;">Copy Table for Excel</button>
+            <div class="table-responsive">
+                <table id="userHistoryTable">
+                    <thead>
+                        <tr>
+                            <th>Date In</th>
+                            <th>In Time</th>
+                            <th>Date Out</th>
+                            <th>Out Time</th>
+                            <th>Total Duty</th>
+                            <th>Overtime</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userHistoryBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 3. ADMIN DASHBOARD -->
+        <div id="adminDashboard" class="view">
+            <div class="header-flex">
+                <h3>Admin Control Panel</h3>
+                <button class="btn btn-secondary" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Add New User Form -->
+            <div style="background: #f8fafc; padding: 20px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 20px;">
+                <h4>Add New User</h4>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Username</label>
+                        <input type="text" id="newUsername" autocomplete="off">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>4-Digit User ID</label>
+                        <input type="text" id="newUserCode" maxlength="4" autocomplete="off">
+                    </div>
+                </div>
+                <div id="addUserMsg" style="margin-top: 10px;"></div>
+                <button class="btn" style="margin-top: 15px;" onclick="addNewUser()">Add User</button>
+            </div>
+
+            <!-- Registered Users List Table -->
+            <h3>Registered Users List</h3>
+            <div class="table-responsive">
+                <table id="registeredUsersTable">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="registeredUsersBody"></tbody>
+                </table>
+            </div>
+
+            <h3>All Users Duty Records & Corrections</h3>
+            <button class="btn btn-secondary" onclick="copyTableData('adminHistoryTable')" style="margin-bottom: 10px;">Copy Table for Excel</button>
+            <div class="table-responsive">
+                <table id="adminHistoryTable">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Name</th>
+                            <th>Date In</th>
+                            <th>In Time</th>
+                            <th>Date Out</th>
+                            <th>Out Time</th>
+                            <th>Duty Hours</th>
+                            <th>Overtime</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminHistoryBody"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 30px; border-top: 2px solid var(--border); padding-top: 20px;">
+                <button class="btn btn-secondary" onclick="resetSystemData()">Reset All Local Data</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- EDIT RECORD MODAL -->
+    <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:white; padding:24px; border-radius:8px; width:100%; max-width:400px;">
+            <h3>Edit Record Entry (24-Hour)</h3>
+            <input type="hidden" id="editRecordId">
+            <div class="form-group">
+                <label>Punch-In Date</label>
+                <input type="date" id="editDateIn">
+            </div>
+            <div class="form-group">
+                <label>Punch-In Time (24-Hour Format)</label>
+                <input type="time" id="editTimeIn" step="1">
+            </div>
+            <div class="form-group">
+                <label>Punch-Out Date</label>
+                <input type="date" id="editDateOut">
+            </div>
+            <div class="form-group">
+                <label>Punch-Out Time (24-Hour Format)</label>
+                <input type="time" id="editTimeOut" step="1">
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="saveEditedRecord()">Save Changes</button>
+                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT USER MODAL -->
+    <div id="editUserModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+        <div style="background:white; padding:24px; border-radius:8px; width:100%; max-width:400px;">
+            <h3>Edit User Details</h3>
+            <input type="hidden" id="editUserOriginalId">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="editUserNameInput">
+            </div>
+            <div class="form-group">
+                <label>4-Digit User ID</label>
+                <input type="text" id="editUserIdInput" maxlength="4">
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="saveEditedUser()">Save Changes</button>
+                <button class="btn btn-secondary" onclick="closeEditUserModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SECURE STORAGE & STABLE INITIALIZATION ---
+        let users = JSON.parse(localStorage.getItem('duty_users')) || [];
+        
+        let adminUser = users.find(u => u.id === '000' || u.role === 'admin');
+        if (!adminUser) {
+            users.unshift({ id: '000', name: 'admin', role: 'admin' });
+        } else {
+            adminUser.id = '000';
+            adminUser.name = 'admin';
+            adminUser.role = 'admin';
+        }
+        localStorage.setItem('duty_users', JSON.stringify(users));
+
+        let records = JSON.parse(localStorage.getItem('duty_records')) || [];
+        let currentUser = null;
+
+        // Live Clock & Date (24-Hour Format)
+        setInterval(() => {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const year = now.getFullYear();
+
+            const clockEl = document.getElementById('liveClock');
+            if (clockEl) {
+                clockEl.innerText = `${hours}:${minutes}:${seconds} | ${day}/${month}/${year}`;
+            }
+        }, 1000);
+
+        // --- UNIFIED LOGIN LOGIC ---
+        function handleLogin() {
+            const inputVal = document.getElementById('loginInput').value.trim();
+            const errorEl = document.getElementById('loginError');
+            errorEl.innerText = '';
+
+            if (!inputVal) {
+                errorEl.innerText = 'Please enter username, User ID, or admin password.';
+                return;
+            }
+
+            // Direct Admin Login Verification
+            if (inputVal === 'admin123' || inputVal.toLowerCase() === 'admin' || inputVal === '000') {
+                currentUser = { id: '000', name: 'admin', role: 'admin' };
+                document.getElementById('loginInput').value = '';
+                renderViews();
+                return;
+            }
+
+            // Normal User Login Verification
+            let foundUser = users.find(u => u.role === 'user' && (u.name.toLowerCase() === inputVal.toLowerCase() || u.id === inputVal));
+
+            if (!foundUser) {
+                errorEl.innerText = 'Invalid username, ID, or password!';
+                return;
+            }
+
+            currentUser = foundUser;
+            document.getElementById('loginInput').value = '';
+            renderViews();
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('loginInput').value = '';
+            renderViews();
+        }
+
+        function renderViews() {
+            document.getElementById('loginView').classList.remove('active');
+            document.getElementById('userDashboard').classList.remove('active');
+            document.getElementById('adminDashboard').classList.remove('active');
+
+            if (!currentUser) {
+                document.getElementById('loginView').classList.add('active');
+            } else if (currentUser.role === 'admin') {
+                document.getElementById('adminDashboard').classList.add('active');
+                loadAdminTables();
+            } else {
+                document.getElementById('userDashboard').classList.add('active');
+                document.getElementById('currentUserName').innerText = currentUser.name;
+                document.getElementById('currentUserId').innerText = currentUser.id;
+                loadUserDashboard();
+            }
+        }
+
+        // --- PUNCH IN / OUT LOGIC (24-Hour Time) ---
+        function getFormattedDate(d = new Date()) {
+            return d.toISOString().split('T')[0];
+        }
+
+        function getFormattedTime24(d = new Date()) {
+            const hours = String(d.getHours()).padStart(2, '0');
+            const minutes = String(d.getMinutes()).padStart(2, '0');
+            const seconds = String(d.getSeconds()).padStart(2, '0');
+            return `${hours}:${minutes}:${seconds}`;
+        }
+
+        function punchIn() {
+            let activeRec = records.find(r => r.userId === currentUser.id && !r.timeOut);
+            if (activeRec) {
+                alert('You are already punched in!');
+                return;
+            }
+
+            const now = new Date();
+            const newRecord = {
+                id: Date.now().toString(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                dateIn: getFormattedDate(now),
+                timeIn: getFormattedTime24(now),
+                dateOut: '',
+                timeOut: '',
+                totalDuty: '-',
+                overtime: '-'
+            };
+
+            records.unshift(newRecord);
+            saveAndReload();
+        }
+
+        function punchOut() {
+            let activeRec = records.find(r => r.userId === currentUser.id && !r.timeOut);
+            if (!activeRec) {
+                alert('No active punch-in found!');
+                return;
+            }
+
+            const now = new Date();
+            activeRec.dateOut = getFormattedDate(now);
+            activeRec.timeOut = getFormattedTime24(now);
+
+            calculateMetrics(activeRec);
+            saveAndReload();
+        }
+
+        function calculateMetrics(rec) {
+            const startDateTime = new Date(`${rec.dateIn}T${rec.timeIn}`);
+            const endDateTime = new Date(`${rec.dateOut}T${rec.timeOut}`);
+            
+            let diffMs = endDateTime - startDateTime;
+            if (diffMs < 0) diffMs = 0;
+
+            const diffHours = diffMs / (1000 * 60 * 60);
+            rec.totalDuty = diffHours.toFixed(2) + ' hrs';
+
+            const standardShift = 8.0;
+            if (diffHours > standardShift) {
+                let ot = diffHours - standardShift;
+                rec.overtime = ot.toFixed(2) + ' hrs';
+            } else {
+                rec.overtime = '0.00 hrs';
+            }
+        }
+
+        function saveAndReload() {
+            localStorage.setItem('duty_records', JSON.stringify(records));
+            if (currentUser && currentUser.role === 'admin') {
+                loadAdminTables();
+            } else if (currentUser) {
+                loadUserDashboard();
+            }
+        }
+
+        // --- USER DASHBOARD LOADER ---
+        function loadUserDashboard() {
+            const tbody = document.getElementById('userHistoryBody');
+            tbody.innerHTML = '';
+
+            let userRecs = records.filter(r => r.userId === currentUser.id);
+            let activeRec = userRecs.find(r => !r.timeOut);
+
+            const statusText = document.getElementById('dutyStatusText');
+            const btnIn = document.getElementById('punchInBtn');
+            const btnOut = document.getElementById('punchOutBtn');
+
+            if (activeRec) {
+                statusText.innerText = `Status: Active Duty (Punched In at ${activeRec.timeIn} on ${activeRec.dateIn})`;
+                btnIn.disabled = true;
+                btnOut.disabled = false;
+            } else {
+                statusText.innerText = 'Status: Not Punched In';
+                btnIn.disabled = false;
+                btnOut.disabled = true;
+            }
+
+            if (userRecs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No duty records found.</td></tr>`;
+                return;
+            }
+
+            userRecs.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${r.dateIn}</td>
+                    <td>${r.timeIn}</td>
+                    <td>${r.dateOut || '-'}</td>
+                    <td>${r.timeOut || '-'}</td>
+                    <td>${r.totalDuty}</td>
+                    <td>${r.overtime}</td>
+                    <td><span class="badge ${r.timeOut ? 'badge-out' : 'badge-active'}">${r.timeOut ? 'Completed' : 'Active'}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- ADMIN DASHBOARD & USER MANAGEMENT ---
+        function addNewUser() {
+            const name = document.getElementById('newUsername').value.trim();
+            const code = document.getElementById('newUserCode').value.trim();
+            const msgEl = document.getElementById('addUserMsg');
+            msgEl.innerText = '';
+
+            if (!name || !code || code.length !== 4) {
+                msgEl.innerHTML = `<span class="error-msg">Please provide a valid username and a 4-digit ID.</span>`;
+                return;
+            }
+
+            if (users.some(u => u.id === code || u.name.toLowerCase() === name.toLowerCase())) {
+                msgEl.innerHTML = `<span class="error-msg">User ID or Username already exists!</span>`;
+                return;
+            }
+
+            users.push({ id: code, name: name, role: 'user' });
+            localStorage.setItem('duty_users', JSON.stringify(users));
+
+            document.getElementById('newUsername').value = '';
+            document.getElementById('newUserCode').value = '';
+            msgEl.innerHTML = `<span class="success-msg">User added successfully!</span>`;
+            loadAdminTables();
+        }
+
+        function loadAdminTables() {
+            // 1. Load Registered Users List with Edit Option
+            const userBody = document.getElementById('registeredUsersBody');
+            userBody.innerHTML = '';
+            users.forEach(u => {
+                const tr = document.createElement('tr');
+                let actionBtn = u.role === 'admin' ? '-' : `<button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="openEditUserModal('${u.id}')">Edit</button>`;
+                tr.innerHTML = `
+                    <td>${u.id}</td>
+                    <td>${u.name}</td>
+                    <td><span class="badge ${u.role === 'admin' ? 'badge-active' : 'badge-out'}">${u.role}</span></td>
+                    <td>${actionBtn}</td>
+                `;
+                userBody.appendChild(tr);
+            });
+
+            // 2. Load Duty Records Table
+            const recordsBody = document.getElementById('adminHistoryBody');
+            recordsBody.innerHTML = '';
+
+            if (records.length === 0) {
+                recordsBody.innerHTML = `<tr><td colspan="9" style="text-align:center;">No records available.</td></tr>`;
+                return;
+            }
+
+            records.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${r.userId}</td>
+                    <td>${r.userName}</td>
+                    <td>${r.dateIn}</td>
+                    <td>${r.timeIn}</td>
+                    <td>${r.dateOut || '-'}</td>
+                    <td>${r.timeOut || '-'}</td>
+                    <td>${r.totalDuty}</td>
+                    <td>${r.overtime}</td>
+                    <td><button class="btn" style="padding: 4px 8px; font-size: 0.8rem;" onclick="openEditModal('${r.id}')">Edit</button></td>
+                `;
+                recordsBody.appendChild(tr);
+            });
+        }
+
+        // --- EDIT USER DETAILS MODAL ---
+        function openEditUserModal(userId) {
+            let user = users.find(u => u.id === userId);
+            if (!user) return;
+
+            document.getElementById('editUserOriginalId').value = user.id;
+            document.getElementById('editUserNameInput').value = user.name;
+            document.getElementById('editUserIdInput').value = user.id;
+
+            document.getElementById('editUserModal').style.display = 'flex';
+        }
+
+        function closeEditUserModal() {
+            document.getElementById('editUserModal').style.display = 'none';
+        }
+
+        function saveEditedUser() {
+            const originalId = document.getElementById('editUserOriginalId').value;
+            const newName = document.getElementById('editUserNameInput').value.trim();
+            const newId = document.getElementById('editUserIdInput').value.trim();
+
+            if (!newName || !newId || newId.length !== 4) {
+                alert('Please enter a valid username and 4-digit ID.');
+                return;
+            }
+
+            let user = users.find(u => u.id === originalId);
+            if (!user) return;
+
+            if (users.some(u => u.id === newId && u.id !== originalId)) {
+                alert('This User ID already exists!');
+                return;
+            }
+
+            user.name = newName;
+            user.id = newId;
+
+            records.forEach(r => {
+                if (r.userId === originalId) {
+                    r.userId = newId;
+                    r.userName = newName;
+                }
+            });
+
+            localStorage.setItem('duty_users', JSON.stringify(users));
+            localStorage.setItem('duty_records', JSON.stringify(records));
+
+            closeEditUserModal();
+            loadAdminTables();
+            alert('User details updated successfully!');
+        }
+
+        // --- ADMIN CORRECTION / EDIT MODAL ---
+        function openEditModal(recordId) {
+            let rec = records.find(r => r.id === recordId);
+            if (!rec) return;
+
+            document.getElementById('editRecordId').value = rec.id;
+            document.getElementById('editDateIn').value = rec.dateIn;
+            document.getElementById('editTimeIn').value = rec.timeIn;
+            document.getElementById('editDateOut').value = rec.dateOut || '';
+            document.getElementById('editTimeOut').value = rec.timeOut || '';
+
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        function saveEditedRecord() {
+            const recId = document.getElementById('editRecordId').value;
+            let rec = records.find(r => r.id === recId);
+            if (!rec) return;
+
+            rec.dateIn = document.getElementById('editDateIn').value;
+            rec.timeIn = document.getElementById('editTimeIn').value;
+            rec.dateOut = document.getElementById('editDateOut').value;
+            rec.timeOut = document.getElementById('editTimeOut').value;
+
+            if (rec.dateOut && rec.timeOut) {
+                calculateMetrics(rec);
+            } else {
+                rec.totalDuty = '-';
+                rec.overtime = '-';
+            }
+
+            saveAndReload();
+            closeEditModal();
+        }
+
+        // --- EXCEL DATA COPY HELPER ---
+        function copyTableData(tableId) {
+            let table = document.getElementById(tableId);
+            let range = document.createRange();
+            range.selectNode(table);
+            window.getSelection().removeAllRanges();
+            window.getSelection().addRange(range);
+            try {
+                document.execCommand('copy');
+                alert('Table data copied to clipboard! You can now paste it directly into Excel or Google Sheets.');
+            } catch (err) {
+                alert('Failed to copy table data.');
+            }
+            window.getSelection().removeAllRanges();
+        }
+
+        function resetSystemData() {
+            if (confirm('Are you sure you want to reset all records?')) {
+                localStorage.removeItem('duty_records');
+                records = [];
+                loadAdminTables();
+            }
+        }
+    </script>
+</body>
+</html>
